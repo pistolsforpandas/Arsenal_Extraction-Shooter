@@ -1,57 +1,53 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections.Generic;
 
 public class GunCustomizationUI : MonoBehaviour
 {
+    [SerializeField] private GameObject InventoryPanel;
+    [SerializeField] private PlayerController playerController;
+    [SerializeField] private InventoryUI inventoryUI; 
+
     public TextMeshProUGUI gunNameText;
-    public TMP_Dropdown barrelDropdown;
-    public TMP_Dropdown scopeDropdown;
-    public TMP_Dropdown UnderbarrelDropdown;
-    public TMP_Dropdown StockDropdown;
-    public TMP_Dropdown MagazineDropdown;
+    public TextMeshProUGUI damageText;
+    public TextMeshProUGUI fireRateText;
+    public TextMeshProUGUI accuracyText;
     public Image attachmentPreviewImage;
 
     private Gun currentGun;
 
+    void Start()
+    {
+        InventoryPanel.SetActive(false);
 
+        if (playerController != null)
+        {
+            Initialize(playerController.playerGun);
+        }
+        else
+        {
+            Debug.LogError("PlayerController is not assigned!");
+        }
+    }
 
     public void Initialize(Gun gun)
     {
         currentGun = gun;
-    gunNameText.text = gun.gunName;
+        gunNameText.text = gun.gunName;
 
-    PopulateDropdown(barrelDropdown, gun.GetAvailableAttachments(AttachmentType.Barrel));
-    PopulateDropdown(scopeDropdown, gun.GetAvailableAttachments(AttachmentType.Scope));
-    PopulateDropdown(UnderbarrelDropdown, gun.GetAvailableAttachments(AttachmentType.Underbarrel));
-    PopulateDropdown(StockDropdown, gun.GetAvailableAttachments(AttachmentType.Stock));
-    PopulateDropdown(MagazineDropdown, gun.GetAvailableAttachments(AttachmentType.Magazine));
+        // Update UI with initial gun stats
+        UpdateGunStats(); 
     }
 
-
-    private void PopulateDropdown(TMP_Dropdown dropdown, List<Attachment> attachments)
+    public void UpdateGunStats()
     {
-        dropdown.options.Clear();
-        foreach (var attachment in attachments)
-        {
-            dropdown.options.Add(new TMP_Dropdown.OptionData(attachment.attachmentName));
-        }
-    }
-    public void OnApplyAttachment()
-    {
-       // Get the selected attachment for each type
-    Attachment selectedBarrel = currentGun.GetAttachmentByName(barrelDropdown.options[barrelDropdown.value].text);
-    Attachment selectedScope = currentGun.GetAttachmentByName(scopeDropdown.options[scopeDropdown.value].text);
-
-    // Apply these attachments to the gun
-    currentGun.ApplyAttachment(selectedBarrel);
-    currentGun.ApplyAttachment(selectedScope);
-
-    // Update preview image or other UI elements if necessary
-    UpdateAttachmentPreview();
+        damageText.text = "Damage: " + currentGun.baseDamage.ToString();
+        fireRateText.text = "Fire Rate: " + currentGun.fireRate.ToString();
+        accuracyText.text = "Accuracy: " + currentGun.accuracy.ToString();
     }
 
-    private void UpdateAttachmentPreview()
+    public void UpdateAttachmentPreview()
     {
         // Example: Update the preview image with the current gun's attachment
         attachmentPreviewImage.sprite = currentGun.GetPreviewSprite();
@@ -60,6 +56,13 @@ public class GunCustomizationUI : MonoBehaviour
     public void OnRemoveAttachment()
     {
         currentGun.RemoveAllAttachments();
-        Initialize(currentGun); // Refresh the UI
+        UpdateGunStats(); 
+        UpdateAttachmentPreview(); 
+
+        // Notify InventoryUI to update its display
+        if (inventoryUI != null) 
+        {
+            inventoryUI.UpdateInventoryUI(); 
+        }
     }
 }

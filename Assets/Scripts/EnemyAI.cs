@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class EnemyAI : MonoBehaviour
 {
@@ -12,6 +13,7 @@ public class EnemyAI : MonoBehaviour
     [Header("Combat")]
     [SerializeField] private int damage = 30;
     [SerializeField] private int scoreValue = 10;
+    
 
     [Header("Detection")]
     [SerializeField] private float visionRange = 5f; // Vision distance
@@ -20,13 +22,16 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float loseSightDelay = 2f; // Time to lose sight if player is out of vision
 
     [SerializeField] private LayerMask detectableLayers; // Include "Player" and "Building"
-
+    [SerializeField] public float dropChance = 0.5f; // Probability of dropping an attachment (0-1)
+    public List<Attachment> possibleDrops; 
     private Transform player;
     private Rigidbody2D rb;
+    
 
     private bool canSeePlayer = false;
     private bool canHearPlayer = false;
     private float loseSightTimer = 0f;
+    
 
     private Vector2 lastKnownPosition;
 
@@ -127,13 +132,26 @@ public class EnemyAI : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Player"))
         {
-            var playerHealth = collision.gameObject.GetComponent<PlayerHealth>();
-            playerHealth?.TakeDamage(damage);
+            var playerController = collision.gameObject.GetComponent<PlayerController>();
+            playerController?.TakeDamage(damage);
         }
     }
 
     void Die()
     {
+            if (Random.value <= dropChance)
+    {
+        // Select a random attachment from the possibleDrops list
+        int randomIndex = Random.Range(0, possibleDrops.Count);
+        Attachment droppedAttachment = possibleDrops[randomIndex];
+
+        // Instantiate the attachment prefab (you'll need to create a prefab for each Attachment)
+        GameObject attachmentPrefab = Resources.Load<GameObject>("Prefabs/" + droppedAttachment.attachmentName); 
+        if (attachmentPrefab != null) 
+        {
+            GameObject attachmentInstance = Instantiate(attachmentPrefab, transform.position, Quaternion.identity); 
+        }
+    }
         Debug.Log($"{gameObject.name} has died!");
         Destroy(gameObject);
         ScoreManager.Instance?.AddScore(scoreValue);
